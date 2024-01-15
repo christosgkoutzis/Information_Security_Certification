@@ -1,2 +1,3 @@
-# Information_Security_Certification
-This repository includes 5 full stack web applications that I've built for my Information Security Certificatation by FreeCodeCamp.
+# Stock Price Checker
+
+This is the boilerplate for the Stock Price Checker project. Instructions for building your project can be found at https://freecodecamp.org/learn/information-security/information-security-projects/stock-price-checker
