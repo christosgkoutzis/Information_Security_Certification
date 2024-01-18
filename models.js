@@ -1,11 +1,37 @@
+// Requires mongoose and creates schema for the DB
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-// StockSchema includes symbol which is a string and likes which is an array of strings that contains the IP address that liked
-const StockSchema = new Schema({
-  symbol: { type: String, required: true},
-  likes: { type: [String], default: [] },
+// Default date value is date() which returns current date in a string
+const date = new Date();
+
+const ReplySchema = new Schema({
+  text: { type: String },
+  delete_password: { type: String },
+  created_on: { type: Date, default: date },
+  bumped_on: { type: Date, default: date },
+  reported: { type: Boolean, default: false },
 });
-// Declares the database model
-const Stock = mongoose.model("Stock", StockSchema);
-// Exports the database model
-exports.Stock = Stock;
+const Reply = mongoose.model("Reply", ReplySchema);
+
+const ThreadSchema = new Schema({
+  text: { type: String },
+  delete_password: { type: String },
+  reported: { type: Boolean, default: false },
+  created_on: { type: Date, default: date },
+  bumped_on: { type: Date, default: date },
+  // Nests a ReplySchema inside the ThreadSchema for thread's replies
+  replies: { type: [ReplySchema] },
+});
+const Thread = mongoose.model("Thread", ThreadSchema);
+
+const BoardSchema = new Schema({
+  name: { type: String },
+  // Nests board's threads in a ThreadSchema
+  threads: { type: [ThreadSchema] },
+});
+const Board = mongoose.model("Board", BoardSchema);
+
+// Exports database models
+exports.Board = Board;
+exports.Thread = Thread;
+exports.Reply = Reply;

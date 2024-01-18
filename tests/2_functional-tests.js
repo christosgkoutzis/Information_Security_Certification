@@ -1,89 +1,194 @@
-// Imports assertion libraries (provided code)
+// Requires assertion libraries
 const chaiHttp = require('chai-http');
 const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 
 chai.use(chaiHttp);
-// Suite of 5 unit tests using Chai assertion library
+// Suite of 10 functional unit tests
 suite('Functional Tests', function() {
-  suite("5 functional get request tests", function () {
-    test("Viewing one stock: GET request to /api/stock-prices/", function (done) {
-      chai
-        // Opens server.js for incoming requests
-        .request(server)
-        // Sends a GET request to the parameter's route
-        .get("/api/stock-prices/")
-        // Sets content-type HTTP header for the request
+  suite("10 functional tests", function () {
+
+    test("Creating a new thread: POST request to /api/threads/{board}", function (done) {
+      // Starts application
+      chai.request(server)
+        // Sends POST HTTP post request to the requested route
+        .post("/api/threads/general")
+        // Sets content-type HTTP header to application/json
         .set("content-type", "application/json")
-        // Sets query parameters for an HTTP request (attached to the URL)
-        .query({ stock: "AAPL" })
-        // Finalizes and executes the HTTP request expecting the behavior below
+        // Declares test's user inputs
+        .send({ text: "test text", delete_password: "test" })
+        // Declares the HTTP responses for the test to be successful
         .end(function (err, res) {
-          // Expects the first parameter to be equal with the second
           assert.equal(res.status, 200);
-          assert.equal(res.body.stockData.stock, "AAPL");
-          assert.exists(res.body.stockData.price, "AAPL has a price");
+          assert.equal(res.body.text, "test text");
+          assert.equal(res.body.delete_password, "test");
+          assert.equal(res.body.reported, false);
+          testThread_id = res.body._id;
           done();
         });
     });
-    test("Viewing one stock and liking it: GET request to /api/stock-prices/", function (done) {
-      chai
-        .request(server)
-        .get("/api/stock-prices/")
-        .set("content-type", "application/json")
-        .query({ stock: "NFLX", like: true })
+
+    test("Viewing the 10 most recent threads with 3 replies each: GET request to /api/threads/{board}", function (done) {
+      chai.request(server)
+        // Sends GET HTTP request to the requested route
+        .get("/api/threads/general")
+        // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 200);
-          assert.equal(res.body.stockData.stock, "NFLX");
-          assert.equal(res.body.stockData.likes, 1);
-          assert.exists(res.body.stockData.price, "NFLX has a price");
+          assert.exists(res.body[0], "There is a thread");
+          assert.equal(res.body[0].text, "test text");
           done();
         });
     });
-    test("Viewing the same stock and liking it again: GET request to /api/stock-prices/", function (done) {
-      chai
-        .request(server)
-        .get("/api/stock-prices/")
+
+    test("Deleting a thread with the incorrect password: DELETE request to /api/threads/{board} with an invalid delete_password", function (done) {
+      chai.request(server)
+        // Sends DELETE HTTP request to the requested route
+        .delete("/api/threads/general")
+        // Sets content type HTTP header
         .set("content-type", "application/json")
-        .query({ stock: "NFLX", like: true })
+        // Declares test's user inputs
+        .send({ thread_id: testThread_id, delete_password: "incorrect" })
+        // Declares expected HTTP responses
         .end(function (err, res) {
-          assert.equal(res.status, 200);
-          assert.equal(res.body.stockData.stock, "NFLX");
-          assert.equal(res.body.stockData.likes, 1);
-          assert.exists(res.body.stockData.price, "NFLX has a price");
+          assert.equal(res.status, 401);
+          assert.equal(res.text, "Incorrect Password.");
           done();
         });
     });
-    test("Viewing two stocks: GET request to /api/stock-prices/", function (done) {
-      chai
-        .request(server)
-        .get("/api/stock-prices/")
+
+    test("Reporting a thread: PUT request to /api/threads/{board}", function (done) {
+      console.log("testThread_id", testThread_id);
+      chai.request(server)
+        // Sends PUT HTTP request to the requested route
+        .put("/api/threads/general")
+        // Sets content type HTTP header
         .set("content-type", "application/json")
-        .query({ stock: ["GOOG", "MSFT"] })
+        // Sets test's user inputs
+        .send({ report_id: testThread_id })
+        // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 200);
-          assert.equal(res.body.stockData[0].stock, "GOOG");
-          assert.equal(res.body.stockData[1].stock, "MSFT");
-          assert.exists(res.body.stockData[0].price, "GOOG has a price");
-          assert.exists(res.body.stockData[1].price, "MSFT has a price");
+          assert.equal(res.text, "Thread reported successfully.");
           done();
         });
     });
-    test("Viewing two stocks and liking them: GET request to /api/stock-prices/", function (done) {
-      chai
-        .request(server)
-        .get("/api/stock-prices/")
+
+    test("Creating a new reply: POST request to /api/replies/{board}", function (done) {
+      chai.request(server)
+        // Sends POST HTTP request to the requested route
+        .post("/api/replies/general")
+        // Sets content-type HTTP header
         .set("content-type", "application/json")
-        .query({ stock: ["GOOG", "MSFT"], like: true })
+        // Sets test's user inputs
+        .send({
+          thread_id: testThread_id,
+          text: "test reply",
+          delete_password: "testreply",
+        })
+        // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 200);
-          assert.equal(res.body.stockData[0].stock, "GOOG");
-          assert.equal(res.body.stockData[1].stock, "MSFT");
-          assert.exists(res.body.stockData[0].price, "GOOG has a price");
-          assert.exists(res.body.stockData[1].price, "MSFT has a price");
-          assert.exists(res.body.stockData[0].rel_likes, "has rel_likes");
-          assert.exists(res.body.stockData[1].rel_likes, "has rel_likes");
+          assert.equal(res.body.replies[0].text, "test reply");
+          testReply_id = res.body.replies[0]._id;
+          console.log(res.body)
+          done();
+        });
+    });
+
+    test("Viewing a single thread with all replies: GET request to /api/replies/{board}", function (done) {
+      chai.request(server)
+        // Sends GET HTTP request to the requested route
+        .get("/api/replies/general")
+        // Sets content-type HTTP header
+        .set("content-type", "application/json")
+        // Gets the requested thread with its replies
+        .query({
+          thread_id: testThread_id,
+        })
+        // Declares expected HTTP responses
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          console.log("test get whole thread body", res.body);
+          assert.equal(res.body._id, testThread_id);
+          assert.equal(res.body.text, "test text");
+          assert.equal(res.body.replies[0].text, "test reply");
+          done();
+        });
+    });
+
+    test("Deleting a reply with the incorrect password: DELETE request to /api/replies/{board} with an invalid delete_password", function (done) {
+      chai.request(server)
+        // Sends DELETE HTTP request to the requested route
+        .delete("/api/replies/general")
+        // Sets content-type HTTP header
+        .set("content-type", "application/json")
+        // Declares test's user inputs
+        .send({
+          thread_id: testThread_id,
+          reply_id: testReply_id,
+          delete_password: "Incorrect",
+        })
+        // Declares expected HTTP responses
+        .end(function (err, res) {
+          assert.equal(res.status, 401);
+          assert.equal(res.text, "Incorrect Password");
+          done();
+        });
+    });
+
+    test("Reporting a reply: PUT request to /api/replies/{board}", function (done) {
+      chai.request(server)
+        // Sends PUT HTTP request to the expected route
+        .put("/api/replies/general")
+        // Sets content-type HTTP header
+        .set("content-type", "application/json")
+        // Declares test's user inputs
+        .send({
+          thread_id: testThread_id,
+          reply_id: testReply_id,
+        })
+        // Declares expected HTTP responses
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, "Success");
+          done();
+        });
+    });
+
+    test("Deleting a reply with the correct password: DELETE request to /api/replies/{board} with a valid delete_password", function (done) {
+      chai.request(server)
+        // Sends DELETE HTTP request to the requested route
+        .delete("/api/replies/general")
+        // Sets content-type HTTP header
+        .set("content-type", "application/json")
+        // Declares test's user inputs
+        .send({
+          thread_id: testThread_id,
+          reply_id: testReply_id,
+          delete_password: "testreply",
+        })
+        // Declares expected HTTP responses
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, "Reply deleted.");
+          done();
+        });
+    });
+
+    test("Deleting a thread with the correct password: DELETE request to /api/threads/{board} with a valid delete_password", function (done) {
+      chai.request(server)
+        // Sends DELETE HTTP request to the requested route
+        .delete("/api/threads/general")
+        // Sets content-type HTTP header
+        .set("content-type", "application/json")
+        // Sets test's user inputs
+        .send({ thread_id: testThread_id, delete_password: "test" })
+        // Declares expected HTTP responses
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, "Thread deleted successfully.");
           done();
         });
     });

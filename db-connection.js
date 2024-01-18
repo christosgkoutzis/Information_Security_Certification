@@ -1,6 +1,5 @@
-// Requires mongoose library
+// Requires mongoose dependency
 const mongoose = require('mongoose');
-// Imports connection string from .env file
-const db = mongoose.connect(process.env.DB,{});
-
+// Connects to the DB through .env connection string
+const db = mongoose.connect(process.env.DB);
 module.exports = db;

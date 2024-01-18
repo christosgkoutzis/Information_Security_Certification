@@ -1,29 +1,18 @@
-'use strict';
-require('dotenv').config();
-const express     = require('express');
-const bodyParser  = require('body-parser');
-const cors        = require('cors');
+"use strict";
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
-const apiRoutes         = require('./routes/api.js');
-const fccTestingRoutes  = require('./routes/fcctesting.js');
-const runner            = require('./test-runner');
-// Requires the file that connects to the db
-require('./db-connection');
-// Requires helmet library for the CSP
+const apiRoutes = require("./routes/api.js");
+const fccTestingRoutes = require("./routes/fcctesting.js");
+const runner = require("./test-runner");
+// Requires helmet library for security features
 const helmet = require('helmet');
+// Requires the file that connects to the DB
+require('./db-connection');
 
 const app = express();
-
-// Implements CSP to accept only loading of scripts and CSS through helmet
-app.use (
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'"],
-    },
-  })
-);
 
 app.use('/public', express.static(process.cwd() + '/public'));
 
@@ -31,6 +20,23 @@ app.use(cors({origin: '*'})); //For FCC testing purposes only
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// Allows web app to be loaded in an iFrame on its own pages
+app.use(helmet.frameguard({ action: 'sameorigin' }));
+// Allows only this app to send the referrer for its own pages
+app.use(helmet({ referrerPolicy: { policy: "same-origin" },
+}));
+// Prevents DNS prefetching
+app.use(helmet.dnsPrefetchControl({ allow: false }));
+
+//Sample front-end
+app.route('/b/:board/')
+  .get(function (req, res) {
+    res.sendFile(process.cwd() + '/views/board.html');
+  });
+app.route('/b/:board/:threadid')
+  .get(function (req, res) {
+    res.sendFile(process.cwd() + '/views/thread.html');
+  });
 
 //Index page (static HTML)
 app.route('/')
@@ -41,9 +47,9 @@ app.route('/')
 //For FCC testing purposes
 fccTestingRoutes(app);
 
-//Routing for API 
-apiRoutes(app);  
-    
+//Routing for API
+apiRoutes(app);
+
 //404 Not Found Middleware
 app.use(function(req, res, next) {
   res.status(404)
@@ -63,7 +69,7 @@ const listener = app.listen(process.env.PORT || 3000, function () {
         console.log('Tests are not valid:');
         console.error(e);
       }
-    }, 3500);
+    }, 1500);
   }
 });
 

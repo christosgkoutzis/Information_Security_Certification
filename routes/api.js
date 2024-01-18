@@ -1,133 +1,246 @@
-// API Link: https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/<symbol>/quote
 'use strict';
 
-// Requires StockModel and node-fetch
-const StockModel = require('../models').Stock;
-const fetch = require('node-fetch');
+// Imports DB models
+const BoardModel = require("../models").Board;
+const ThreadModel = require("../models").Thread;
+const ReplyModel = require("../models").Reply;
 
-// Creates new stock queries that will be added in the DB
-async function createStock(stock, like, ip) {
-  let likes_value = [];
-  if (like == true){
-    likes_value = [ip];
-  }
-  const newStock = new StockModel({
-    symbol: stock,
-    likes: likes_value,
-  });
-  // Saves the new query in the DB
-  const savedNew = await newStock.save();
-  return savedNew;
-}
-
-// Checks if there is a stock with the name (stock) in the DB
-async function findStock(stock) {
-  // .findOne checks for the most matched result (if any) and .exec executes a regular expression search 
-  return await StockModel.findOne({ symbol: stock }).exec();
-}
-
-// Saves information fetched from the API in the database
-async function saveStock(stock, like, ip) {
-  let saved = {};
-  // Checks if the stock is found through findstock function
-  const foundStock = await findStock(stock);
-  // If it wasn't found it creates a new stock model through createStock function
-  if (!foundStock) {
-    const createsaved = await createStock(stock, like, ip);
-    saved = createsaved;
-    return saved;
-  }
-  else {
-    // If there is already a (stock) query in the DB, it checks if our IP is in the likes of it and if not, it adds it (push)
-    if (like && foundStock.likes.indexOf(ip) === -1) {
-      foundStock.likes.push(ip);
-    }
-    // Saves the new query in the DB
-    saved = await foundStock.save();
-    return saved;
-  }
-}
-
-// Async function (because of fetch) that gets Information from a stock through the API
-async function getStock(stock) {
-  // Fetches response from API
-  const response = await fetch(
-    // Used backticks(`) instead of single quotes (') for the stock value to be replaced
-    `https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${stock}/quote`
-  );
-  // Stores only desired information in an object as json
-  const { symbol, latestPrice } = await response.json();
-  // Returns information
-  return { symbol, latestPrice };
-}
-
-module.exports = function (app) {
-  // Converted function to async because getStock is async
-  app.route('/api/stock-prices').get(async function (req, res){
-      // req.query is an Express.js object containing a set of key-value pairs representing the query parameters of the URL. We store these info in a JS object
-      const { stock, like } = req.query;
-
-      // Checks if the user submitted the 2nd form by checking if the stock value is an array
-      if (Array.isArray(stock)) {
-        console.log("stocks", stock)
-        // Fetches info about the 2 stocks from the API through getStock function
-        const { symbol: symbol1, latestPrice: latestPrice1 } = await getStock(stock[0]);
-        const { symbol: symbol2, latestPrice: latestPrice2 } = await getStock(stock[1]);
-        // Saves the 2 stocks in the DB
-        const firststock = await saveStock(stock[0], like, req.ip);
-        const secondstock = await saveStock(stock[1], like, req.ip);
-        // Creates an array that will store the stockdata to be displayed
-        let stockData = [];
-        // Checks if the first stock symbol exists
-        if (!symbol1) {
-          stockData.push({
-            rel_likes: firststock.likes.length - secondstock.likes.length,
-          });
-        }
-        else {
-          stockData.push({
-            stock: symbol1,
-            price: latestPrice1,
-            rel_likes: firststock.likes.length - secondstock.likes.length,
-          });
-        }
-        // Checks if second symbol exists
-        if (!symbol2) {
-          stockData.push({
-            rel_likes: secondstock.likes.length - firststock.likes.length,
-          });
-        }
-        else {
-          stockData.push({
-            stock: symbol2,
-            price: latestPrice2,
-            rel_likes: secondstock.likes.length - firststock.likes.length,
-          });
-        }
-        res.json({
-          stockData,
+module.exports = async function (app) {
+  // Threads route
+  app.route('/api/threads/:board')
+  // POST HTTP request (ability to post new threads to the DB)
+  .post(async (req, res) => {
+    try {
+      // Gets text and delete_password from user's inputs
+      const { text, delete_password } = req.body;
+      // Gets board of the thread from the body if it exists
+      let board = req.body.board;
+      // If the board doesn't exist, gets the board from :board parameter of the route
+      if (!board) {
+        board = req.params.board;
+      }
+      console.log("post", req.body);
+      // Creates a new ThreadModel with the information above
+      const newThread = new ThreadModel({
+        text: text,
+        delete_password: delete_password,
+        replies: [],
+      });
+      console.log("newThread", newThread);
+      // Checks if we already have the declared above board in the DB
+      const Boarddata = await BoardModel.findOne({ name: board }); 
+      //  If there is no such board, it creates a new board model in the DB
+      if (!Boarddata) {
+        const newBoard = new BoardModel({
+          name: board,
+          threads: [newThread],
         });
-        return;
+        console.log("newBoard", newBoard);
+        // Appends the new board model in the db
+        await newBoard.save();
+        res.json(newThread);
       }
-      // User submitted the first form
-      const { symbol, latestPrice } = await getStock(stock);
-      // If there is no such symbol name the only stockData will be the like 
-      if (!symbol){
-        res.json({ stockData: { likes: like ? 1 : 0 }});
-        return;
+      else {
+        // If findOne finds a board in the DB, the thread gets appended to it
+        Boarddata.threads.push(newThread);
+        await Boarddata.save();
+        res.json(newThread);
       }
+    }
+    // Checks if there is an error saving board data
+    catch (err) {
+      console.log(err); 
+      res.status(500).send("There was an error saving in post");
+    }
+  })
+  // GET HTTP request (ability to retrieve boards/threads from the DB)
+  .get(async (req, res) => {
+    // Retrieves the board from URL's parameters
+    const board = req.params.board;
+    // Searches the DB for the board
+    const data = await BoardModel.findOne({ name: board }); 
+    if (!data) {
+      console.log("No board with this name");
+      res.json({ error: "No board with this name" });
+    } 
+    else {
+      console.log("data", data);
+      // Uses map function to determnine replycount and return the result to threads variable
+      const threads = data.threads.map((thread) => {
+        const {_id, text, created_on, bumped_on, reported, delete_password, replies,} = thread;
+        return {_id, text, created_on, bumped_on, reported, delete_password, replies, replycount: thread.replies.length,};
+      });
+      res.json(threads);
+    }
+  })
+  // PUT HTTP request (update a record in the DB)
+  .put (async (req, res) => {
+    console.log("put", req.body);
+    // Stores in variables the thread's id from the body and the board from the parameters
+    const { report_id } = req.body;
+    const board = req.params.board;
+    // Checks if the board can be found in the DB
+      const boardData = await BoardModel.findOne({ name: board }); 
+      if (!boardData) {
+        res.json("error", "Board not found");
+      }
+      // If the board is found, it updates its reported thread on the respective DB record 
+      else {
+        const date = new Date();
+        let reportedThread = boardData.threads.id(report_id);
+        reportedThread.reported = true;
+        reportedThread.bumped_on = date;
+        boardData.save()
+        .then(updatedData => {
+          res.send("Thread reported successfully.");
+        })
+        .catch(err => {
+          // Handle the error
+          console.error(err);
+          res.send("Error saving data.");
+        });
+      }
+    })
+  // DELETE HTTP request
+  .delete(async (req, res) => {
+    try {
+      console.log("delete", req.body);
+      // Gets thread id and delete_password user's input from the body
+      const { thread_id, delete_password } = req.body;
+      const board = req.params.board;
+      // Checks if the board is in the DB
+      const boardData = await BoardModel.findOne({ name: board });
 
-      // Passes data that saveStock function will use 
-      const oneStockData = await saveStock(symbol, like, req.ip);
-      console.log('One Stock Data', oneStockData);
+      if (!boardData) {
+        res.status(404).json({ error: "Board not found" });
+      } else {
+        let threadToDelete = boardData.threads.id(thread_id);
 
-      // JSON data that the functions above need from the API as well as the unit tests to run
-      res.json({
-        stockData: {
-          stock: symbol,
-          price: latestPrice,
-          likes: oneStockData.likes.length,
-        },
-      });  
-  });    
+        // Checks if the delete password is correct to delete the thread
+        if (threadToDelete.delete_password === delete_password) {
+          boardData.threads.pull(threadToDelete);
+          await boardData.save();
+          res.send("Thread deleted successfully.");
+        } else {
+          res.status(401).send('Incorrect Password.');
+        }
+      }
+    } catch (err) {
+      // Handle the error
+      console.error(err);
+      res.status(500).send("Error deleting.");
+    }
+  });
+
+
+  app.route('/api/replies/:board')
+  // POST HTTP request
+  .post(async (req, res) => {
+    try {
+      console.log("thread", req.body);
+      // Stores in an object thread's info from the body
+      const { thread_id, text, delete_password } = req.body;
+      // Stores in a variable board's name from URL parameters
+      const board = req.params.board;
+      // Creates new DB model for the reply
+      const newReply = new ReplyModel({
+        text: text,
+        delete_password: delete_password,
+      });
+        // Checks if the board is in the DB
+      const boardData = await BoardModel.findOne({ name: board });
+      if (!boardData) {
+        res.status(404).json({ error: "Board not found" });
+      } 
+      else {
+        const date = new Date();
+        const threadToAddReply = boardData.threads.id(thread_id);
+        if (threadToAddReply) {
+          threadToAddReply.bumped_on = date;
+          threadToAddReply.replies.push(newReply);
+          await boardData.save();
+          res.json(threadToAddReply);
+        } else {
+          res.status(404).json({ error: "Thread not found" });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Internal Server Error");
+    }
+  })  
+  // GET HTTP request
+  .get(async (req, res) => {
+    // Gets board name from URL's parameters
+    const board = req.params.board;
+    // Checks if the board is in the DB
+    const data = await BoardModel.findOne({ name: board }); 
+    if (!data) {
+      console.log("No board with this name");
+      res.json({ error: "No board with this name" });
+    }
+    // If the board is in the DB, it gets the thread through id function and returns it as json
+    else {
+      console.log("data", data);
+      const thread = data.threads.id(req.query.thread_id);
+      res.json(thread);
+    }
+  })
+  // PUT HTTP request (report a reply)
+  .put(async (req, res) => {
+    try {
+      // Declares information about the reply
+      const { thread_id, reply_id } = req.body;
+      const board = req.params.board;
+      // Checks if the board is in the DB
+      const data = await BoardModel.findOne({ name: board });
+
+      if (!data) {
+        res.status(404).json({ error: "No board with this name" });
+      } else {
+        console.log("data", data);
+        let thread = data.threads.id(thread_id);
+        let reply = thread.replies.id(reply_id);
+        reply.reported = true;
+        reply.bumped_on = new Date();
+
+        await data.save();
+        res.send("Success");
+      }
+    } catch (err) {
+      console.log("There was an error.", err);
+      res.status(500).send("There was an error.");
+    }
+  })
+  // DELETE HTTP request (deletes a  reply)
+  .delete(async (req, res) => {
+    try {
+      const { thread_id, reply_id, delete_password } = req.body;
+      console.log("delete reply body", req.body);
+      const board = req.params.board;
+      const data = await BoardModel.findOne({ name: board });
+
+      if (!data) {
+        console.log("No board with this name");
+        res.status(404).json({ error: "No board with this name" });
+      } else {
+        console.log("data", data);
+        let thread = data.threads.id(thread_id);
+        let reply = thread.replies.id(reply_id);
+
+        // Checks if delete_password is correct
+        if (reply.delete_password === delete_password) {
+          thread.replies.pull(reply);
+          await data.save();
+          res.send("Reply deleted.");
+        } else {
+          res.status(401).send("Incorrect Password");
+        }
+      }
+    } catch (err) {
+      // Handle the error
+      console.error(err);
+      res.status(500).send("There was an error.");
+    }
+  });
 };
