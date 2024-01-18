@@ -120,9 +120,9 @@ module.exports = async function (app) {
         if (threadToDelete.delete_password === delete_password) {
           boardData.threads.pull(threadToDelete);
           await boardData.save();
-          res.send("Thread deleted successfully.");
+          res.send("success");
         } else {
-          res.status(401).send('Incorrect Password.');
+          res.status(401).send('incorrect password');
         }
       }
     } catch (err) {
@@ -232,9 +232,9 @@ module.exports = async function (app) {
         if (reply.delete_password === delete_password) {
           thread.replies.pull(reply);
           await data.save();
-          res.send("Reply deleted.");
+          res.send("success");
         } else {
-          res.status(401).send("Incorrect Password");
+          res.status(401).send("incorrect password");
         }
       }
     } catch (err) {
