@@ -53,7 +53,7 @@ suite('Functional Tests', function() {
         // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 401);
-          assert.equal(res.text, "Incorrect Password.");
+          assert.equal(res.text, "incorrect password");
           done();
         });
     });
@@ -133,7 +133,7 @@ suite('Functional Tests', function() {
         // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 401);
-          assert.equal(res.text, "Incorrect Password");
+          assert.equal(res.text, "incorrect password");
           done();
         });
     });
@@ -172,7 +172,7 @@ suite('Functional Tests', function() {
         // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 200);
-          assert.equal(res.text, "Reply deleted.");
+          assert.equal(res.text, "success");
           done();
         });
     });
@@ -188,7 +188,7 @@ suite('Functional Tests', function() {
         // Declares expected HTTP responses
         .end(function (err, res) {
           assert.equal(res.status, 200);
-          assert.equal(res.text, "Thread deleted successfully.");
+          assert.equal(res.text, "success");
           done();
         });
     });
