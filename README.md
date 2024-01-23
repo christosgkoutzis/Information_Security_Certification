@@ -3,15 +3,15 @@
 <h3 align="center">This is a collection of 4 projects that I've built during a 300-hour curriculum on "User's Security when developing web applications" by FreeCodeCamp.</h3>
 
 <p align="center">
-  <img src="for-readme/certificate.PNG" alt="Information Security Certificate" width=80%>
+  <img src="for-readme/certificate.png" alt="Information Security Certificate" width=80%>
 </p>
 
 <p align="center">
-    <img src="for-readme/mongo.png" alt="mongo" width=10%>
-    <img src="for-readme/express.png" alt="expressjs" width=10%>
-    <img src="for-readme/react.png" alt="reactjs" width=10%>
-    <img src="for-readme/node.png" alt="nodejs" width=10%>
-    <img src="for-readme/python.png" alt="python" width=10%>
+    <img src="for-readme/mongo.png" alt="mongo" width=100px>
+    <img src="for-readme/express.png" alt="expressjs" width=100px>
+    <img src="for-readme/react.png" alt="reactjs" width=100px>
+    <img src="for-readme/node.png" alt="nodejs" width=100px>
+    <img src="for-readme/python.png" alt="python" width=100px>
 </p>
 
 ## Inspiration
