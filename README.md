@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-    <img src="for-readme/mongo.png" alt="mongo" width=100px>
-    <img src="for-readme/express.png" alt="expressjs" width=100px>
-    <img src="for-readme/react.png" alt="reactjs" width=100px>
-    <img src="for-readme/node.png" alt="nodejs" width=100px>
-    <img src="for-readme/python.png" alt="python" width=100px>
+    <img src="for-readme/mongo.png" alt="mongo" width=10%>
+    <img src="for-readme/express.png" alt="expressjs" width=10%>
+    <img src="for-readme/react.png" alt="reactjs" width=10%>
+    <img src="for-readme/node.png" alt="nodejs" width=10%>
+    <img src="for-readme/python.png" alt="python" width=10%>
 </p>
 
 ## Inspiration
