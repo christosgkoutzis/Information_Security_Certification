@@ -2,6 +2,7 @@
 <h3 align="center">A full stack web platform, that gives users the opportunity to communicate anonymously, like they would do on a forum, submitting new boards/threads/comments.</h3>
 
 <p align="center"> FreeCodeCamp's source code: https://github.com/freeCodeCamp/boilerplate-project-messageboard/</p>
+<p align="center"> View FreeCodeCamp's deployment: https://anonymous-message-board.freecodecamp.rocks</p>
 
 <p align="center">
   <img src="for-readme/home.png" alt="dashboard" width=80%>
