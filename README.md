@@ -77,3 +77,18 @@ Backend Development
   - The <code>api.js</code> implements the functionality mentioned in the unit tests, interacting with the database
 
 </details>
+
+<details>
+<summary>
+Security Features
+</summary> <br />
+  
+The website, has a bunch of security features, taught in the lessons of the course and implemented using the HelmetJS library like:
+  
+  -  Allowing the website to be loaded only in an iFrame on its own pages, preventing threats like clickjacking
+    
+  -  Not allowing DNS prefetching, preventing user's browsing history on the app to get passed in other web applications
+    
+  -  Setting a Referrer Policy to prevent unneccessairy leakage of sensitive information or browsing behaviour of the users
+
+</details>
