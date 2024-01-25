@@ -5,7 +5,7 @@
 <p align="center"> My replit with the completed project: https://replit.com/@christosgkoutzi/python-port-scanner</p>
 
 <p align="center">
-    <img src="for-readme/python.png" alt="python" width=10%>
+    <img src="python.png" alt="python" width=10%>
 </p> 
 
 ## Features
